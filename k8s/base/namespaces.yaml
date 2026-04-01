@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Namespaces with Labels and Annotations
+# ─────────────────────────────────────────────────────────────────────────────
+# Interview talking point: "We label namespaces for Network Policy selectors,
+# cost allocation, and Pod Security Standards enforcement. The
+# pod-security.kubernetes.io labels enforce baseline security at the
+# namespace level — pods that violate the policy are rejected by admission."
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data-platform
+  labels:
+    team: data-platform
+    purpose: data-services
+    # Pod Security Standards — enforce baseline (blocks privileged containers)
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: airflow
+  labels:
+    team: data-platform
+    purpose: orchestration
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+  labels:
+    team: data-platform
+    purpose: streaming
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    team: platform
+    purpose: observability
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted

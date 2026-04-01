@@ -1,0 +1,123 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Network Policies — micro-segmentation (east-west traffic control)
+# ─────────────────────────────────────────────────────────────────────────────
+# Interview talking points:
+#   - "Network Policies implement Zero Trust INSIDE the cluster. By default,
+#     Kubernetes allows all pod-to-pod traffic. Our default-deny policy
+#     blocks everything, then we explicitly allow only required flows."
+#   - "This is micro-segmentation — the same concept as NSGs in Azure
+#     networking, but at the Kubernetes pod level."
+#   - "Azure CNI + Azure Network Policy engine enforces these rules.
+#     Without a CNI that supports NetworkPolicy, these manifests are ignored."
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Default Deny All (per namespace) ──────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: data-platform
+spec:
+  podSelector: {}          # Matches ALL pods in the namespace
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: airflow
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: kafka
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# ── Allow DNS (required for all pods to resolve service names) ────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: data-platform
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: airflow
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: kafka
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# ── Allow Airflow → Kafka (DAGs produce/consume Kafka messages) ──────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-airflow-to-kafka
+  namespace: kafka
+spec:
+  podSelector:
+    matchLabels:
+      strimzi.io/kind: Kafka
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              purpose: orchestration
+      ports:
+        - protocol: TCP
+          port: 9092    # Kafka broker
+        - protocol: TCP
+          port: 9093    # Kafka TLS

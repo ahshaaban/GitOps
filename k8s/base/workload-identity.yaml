@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Workload Identity — secretless pod-to-Azure authentication
+# ─────────────────────────────────────────────────────────────────────────────
+# Interview talking points:
+#   - "Workload Identity replaces pod-identity (deprecated) and eliminates
+#     ALL secrets for Azure service access. A pod's ServiceAccount is
+#     federated with an Azure AD Managed Identity via OIDC."
+#   - "The flow: Pod → K8s projects a JWT → AKS OIDC issuer validates it →
+#     Azure AD trusts the issuer → grants the Managed Identity's permissions."
+#   - "This ServiceAccount would be annotated with the Azure Client ID and
+#     bound to an Azure User-Assigned Managed Identity that has
+#     'Storage Blob Data Contributor' on the ADLS account."
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ServiceAccount for pods that need to access Azure resources (ADLS, KeyVault)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: data-workload-identity
+  namespace: data-platform
+  annotations:
+    # Replace with the actual Client ID of the User-Assigned Managed Identity
+    azure.workload.identity/client-id: "<MANAGED_IDENTITY_CLIENT_ID>"
+  labels:
+    azure.workload.identity/use: "true"
+
+---
+# ServiceAccount for Airflow workers that access ADLS for DAG data
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: airflow-workload-identity
+  namespace: airflow
+  annotations:
+    azure.workload.identity/client-id: "<MANAGED_IDENTITY_CLIENT_ID>"
+  labels:
+    azure.workload.identity/use: "true"
