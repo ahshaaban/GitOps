@@ -4,12 +4,15 @@
 # Interview talking points:
 #   - "This pipeline implements Shift-Left security: Checkov scans IaC for
 #     misconfigurations BEFORE any resources are created."
+
 #   - "We use OIDC federation (not service principal secrets) to authenticate
 #     GitHub Actions to Azure — the `azure/login` action exchanges a GitHub
 #     JWT for an Azure token."
 #   - "This demonstrates Push-Based GitOps: Instead of ArgoCD inside the
 #     cluster pulling from Git, our GitHub Actions pipeline pushes (kubectl apply)
 #     to the cluster upon merge. This is an excellent Stage 1 maturity model."
+#    - GitHub Actions uses OIDC to authenticate to Azure, which is more secure than using service principal secrets.
+#    - GitHub Actions uses OIDC to authenticate to Azure, which is more secure than using service principal secrets.
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: "CI/CD — Terraform & Push GitOps"
