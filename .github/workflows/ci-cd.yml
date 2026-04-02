@@ -38,8 +38,8 @@ permissions:
   pull-requests: write  # Post plan output as PR comment
 
 env:
-  TOFU_VERSION: "1.6.2"
-  TERRAGRUNT_VERSION: "0.55.0"
+  TOFU_VERSION: "1.9.0"        # Latest stable OpenTofu
+  TERRAGRUNT_VERSION: "1.0.0"  # To match your local environment version
 
 jobs:
   # ── Job 1: Security Scan (runs on ALL triggers) ────────────────────────────
@@ -91,13 +91,12 @@ jobs:
 
       - name: Terragrunt Validate
         working-directory: infra/live/${{ matrix.environment }}
-        run: terragrunt run-all validate --terragrunt-non-interactive
+        run: terragrunt run --all --non-interactive -- validate
 
       - name: Terragrunt Plan
         working-directory: infra/live/${{ matrix.environment }}
         run: |
-          terragrunt run-all plan \
-            --terragrunt-non-interactive \
+          terragrunt run --all --non-interactive -- plan \
             -out=tfplan 2>&1 | tee plan_output.txt
 
       - name: Post Plan to PR
@@ -140,6 +139,7 @@ jobs:
           curl -sL "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64" \
             -o /usr/local/bin/terragrunt
           chmod +x /usr/local/bin/terragrunt
+        shell: bash
 
       - name: Azure Login (OIDC)
         uses: azure/login@v2
@@ -151,8 +151,7 @@ jobs:
       - name: Terragrunt Apply
         working-directory: infra/live/${{ matrix.environment }}
         run: |
-          terragrunt run-all apply \
-            --terragrunt-non-interactive \
+          terragrunt run --all --non-interactive -- apply \
             -auto-approve
 
   # ── Job 4: K8s Manifest Validation (runs on ALL triggers) ────────────────
@@ -191,10 +190,8 @@ jobs:
         uses: azure/setup-kubectl@v3
 
       - name: Get AKS Credentials
-        # NOTE: Using dev environment hardcoded here for the demo. In a real
-        # pipeline, this would use a matrix strategy or environment variables.
         run: |
-          az aks get-credentials --resource-group te-data-dev-rg --name te-dev-aks --overwrite-existing
+          az aks get-credentials --resource-group te-dev-rg --name te-dev-aks --overwrite-existing
 
       - name: Apply Base Manifests
         # Pushes base NS/RBAC/Policies to the cluster
